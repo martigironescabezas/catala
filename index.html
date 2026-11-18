@@ -292,10 +292,6 @@ desa();
 const BLOCS = ["anki", "escolta", "lectura"];
 const NOM = { anki: "复习卡片", escolta: "听力", lectura: "故事" };
 const MINUTS = { anki: 10, escolta: 10, lectura: 10 };
-const PREPARACIO = [
-  ["inici", "把这个页面添加到主屏幕：在 Safari 里点「分享」→「添加到主屏幕」。以后每天都从这个图标打开，这样进度不会丢。"],
-  ["so", "打开声音：iPhone 侧面的静音键不要打开，不然听不到录音。"],
-];
 
 const S = { vista: "avui", data: avui(), sessio: null, celSel: null };
 const totsDies = () => SETMANES.flatMap(w => w.dies.map(dia => ({ w, dia })));
@@ -318,7 +314,6 @@ function patchLog(data, fn) {
   desa();
   refresca(false);
 }
-function patchConfig(fn) { fn(E.config); desa(); refresca(false); }
 
 // ---------- Àudio ----------
 const reproductor = new Audio();
@@ -508,14 +503,6 @@ function capcalera(info) {
     S.data !== avui() ? h("div", null, h("button", { class: "btn", onclick: () => { S.data = avui(); refresca(true); } }, "回到今天")) : null);
 }
 
-function blocPreparacio() {
-  return h("section", { class: "bloc" },
-    h("h2", null, "开始之前"),
-    h("ul", { class: "checklist" }, PREPARACIO.map(([k, t]) => h("li", null,
-      h("button", { class: "check", "data-k": k, "aria-pressed": "false", "aria-label": "完成：" + t, svg: SVG.check, onclick: () => patchConfig(c => { c[k] = !c[k]; }) }),
-      h("span", null, t)))));
-}
-
 function cosBloc(b, info, data) {
   const { dia } = info;
   switch (b) {
@@ -538,10 +525,8 @@ function buildAvui() {
   const info = infoDe(S.data);
   if (!info) return posa(root, capcalera(null),
     h("p", null, S.data > darrerDia() ? "这两周的内容都在这里了。新的内容很快就会加上，同一个链接打开就有。" : ""));
-  const prepFeta = PREPARACIO.every(([k]) => E.config?.[k]);
   posa(root,
     capcalera(info),
-    prepFeta ? null : blocPreparacio(),
     h("ol", { class: "ruta" }, BLOCS.map(b => h("li", { class: "parada", "data-b": b },
       h("button", { class: "punt", "aria-pressed": "false", "aria-label": `${NOM[b]}：完成`, svg: SVG.check, onclick: () => patchLog(S.data, l => { l.blocs[b] = !l.blocs[b]; }) }),
       h("div", { class: "parada-cos" },
@@ -554,7 +539,6 @@ function buildAvui() {
 }
 function syncAvui(animar = true) {
   const root = $("#v-avui");
-  root.querySelectorAll(".check[data-k]").forEach(b => b.setAttribute("aria-pressed", String(!!E.config?.[b.dataset.k])));
   if (!infoDe(S.data)) return;
   const log = E.dies[S.data] || {};
   let fets = 0;
@@ -720,7 +704,6 @@ function renderSetmana() {
   const t = avui();
   const rang = `${curt(dataDe(w.dies[0].n))} – ${curt(dataDe(w.dies.at(-1).n))}`;
   const obre = d => { S.data = d; mostra("avui"); };
-  const prepFeta = PREPARACIO.every(([k]) => E.config?.[k]);
   posa(root,
     h("header", { class: "cap" },
       h("div", { class: "cap-nav" },
@@ -744,9 +727,7 @@ function renderSetmana() {
         h("span", { class: "data" }, `${curt(data)}`, h("br"), SETMANA_DIES[parse(data).getDay()]),
         h("span", { style: "min-width:0;display:grid" }, h("span", { class: "tema" }, d.tema), h("span", { class: "sub" }, `${d.escena.titol} · ${d.historia.titol}`)),
         fets === total && total ? h("span", { class: "chip fet" }, "完成") : passat || fets ? h("span", { class: "chip" }, `${fets}/${total}`) : h("span")));
-    })),
-    prepFeta ? null : blocPreparacio());
-  root.querySelectorAll(".check[data-k]").forEach(b => b.setAttribute("aria-pressed", String(!!E.config?.[b.dataset.k])));
+    })));
 }
 
 // ---------- Vista: Progrés ----------
